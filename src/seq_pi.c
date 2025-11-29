@@ -1,31 +1,20 @@
-// src/seq_pi.c
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <sys/time.h>
 
-/**
- * Devuelve el tiempo actual en segundos (double).
- */
 double now_seconds(void) {
     struct timeval tv;
     gettimeofday(&tv, NULL);
     return (double)tv.tv_sec + (double)tv.tv_usec * 1e-6;
 }
 
-/**
- * Generador simple de números pseudoaleatorios [0, 1),
- * basado en un LCG. Cada hilo / ejecución tendrá su propio estado.
- */
 static inline double lcg_rand01(unsigned int *state) {
     *state = (*state * 1103515245u + 12345u);
-    unsigned int x = (*state >> 8) & 0x00FFFFFFu; // 24 bits "decentes"
-    return (double)x / (double)0x01000000u;       // dividir por 2^24
+    unsigned int x = (*state >> 8) & 0x00FFFFFFu;
+    return (double)x / (double)0x01000000u;
 }
 
-/**
- * Estima pi usando Monte Carlo de forma secuencial.
- */
 double estimate_pi_sequential(long long num_samples) {
     long long inside = 0;
     unsigned int seed = (unsigned int)time(NULL);
@@ -42,7 +31,7 @@ double estimate_pi_sequential(long long num_samples) {
 }
 
 int main(int argc, char *argv[]) {
-    long long num_samples = 1000000; // valor por defecto
+    long long num_samples = 1000000;
 
     if (argc >= 2) {
         num_samples = atoll(argv[1]);

@@ -1,43 +1,28 @@
-// src/par_pi_pthreads.c
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <sys/time.h>
 #include <pthread.h>
-#include <unistd.h> // para sysconf (núcleos disponibles)
+#include <unistd.h>
 
-/**
- * Devuelve el tiempo actual en segundos (double).
- */
 double now_seconds(void) {
     struct timeval tv;
     gettimeofday(&tv, NULL);
     return (double)tv.tv_sec + (double)tv.tv_usec * 1e-6;
 }
 
-/**
- * Generador simple de números pseudoaleatorios [0, 1),
- * igual que en la versión secuencial, pero cada hilo usa su propio estado.
- */
 static inline double lcg_rand01(unsigned int *state) {
     *state = (*state * 1103515245u + 12345u);
     unsigned int x = (*state >> 8) & 0x00FFFFFFu;
     return (double)x / (double)0x01000000u;
 }
 
-/**
- * Datos que se pasan a cada hilo.
- */
 typedef struct {
     long long num_samples;
     unsigned int seed;
     long long inside;
 } ThreadData;
 
-/**
- * Función que ejecuta cada hilo: cuenta cuántos puntos
- * caen dentro del círculo.
- */
 void *worker(void *arg) {
     ThreadData *data = (ThreadData *)arg;
     long long inside = 0;
@@ -56,7 +41,7 @@ void *worker(void *arg) {
 }
 
 int main(int argc, char *argv[]) {
-    long long num_samples = 1000000; // por defecto
+    long long num_samples = 1000000;
     int num_threads = 0;
 
     if (argc >= 2) {
@@ -71,20 +56,16 @@ int main(int argc, char *argv[]) {
         num_threads = atoi(argv[2]);
     }
 
-    // Si no se especifica, usar núcleos disponibles
     if (num_threads <= 0) {
         long nprocs = sysconf(_SC_NPROCESSORS_ONLN);
         if (nprocs < 1) nprocs = 2;
         num_threads = (int)nprocs;
     }
 
-    // IMPORTANTE: no tener más hilos que muestras,
-    // pero SIN castear num_samples a int (evitamos overflow).
     if (num_samples < num_threads) {
         num_threads = (int)num_samples;
     }
 
-    // Por seguridad, al menos 1 hilo
     if (num_threads <= 0) {
         num_threads = 1;
     }
@@ -93,7 +74,6 @@ int main(int argc, char *argv[]) {
     printf("Muestras totales: %lld\n", num_samples);
     printf("Hilos: %d\n", num_threads);
 
-    // Solo dependemos de num_threads, que es pequeño (núcleos, etc.)
     pthread_t *threads = malloc((size_t)num_threads * sizeof(pthread_t));
     ThreadData *data = malloc((size_t)num_threads * sizeof(ThreadData));
 
@@ -104,7 +84,6 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    // Repartir las muestras entre los hilos
     long long base = num_samples / num_threads;
     long long remainder = num_samples % num_threads;
 
@@ -114,7 +93,6 @@ int main(int argc, char *argv[]) {
         data[i].num_samples = base + (i < remainder ? 1 : 0);
         data[i].inside = 0;
 
-        // Semilla distinta por hilo
         unsigned int seed = (unsigned int)time(NULL);
         seed ^= (unsigned int)(i * 2654435761u);
         data[i].seed = seed;
@@ -122,7 +100,7 @@ int main(int argc, char *argv[]) {
         int rc = pthread_create(&threads[i], NULL, worker, &data[i]);
         if (rc != 0) {
             fprintf(stderr, "Error al crear hilo %d\n", i);
-            num_threads = i; // solo estos hilos se han creado
+            num_threads = i;
             break;
         }
     }
