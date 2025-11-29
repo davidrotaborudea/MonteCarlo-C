@@ -1,7 +1,6 @@
 # Autores
 
 - David Mejia Castaño
-- Miguel Angel Puerta Vasquez
 - Juan Pablo Zuluaga Jaramillo
 - David Stiven Rodríguez Taborda
 
