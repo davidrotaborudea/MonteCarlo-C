@@ -12,7 +12,7 @@ double now_seconds(void) {
 static inline double lcg_rand01(unsigned int *state) {
     *state = (*state * 1103515245u + 12345u);
     unsigned int x = (*state >> 8) & 0x00FFFFFFu;
-    return (double)x / (double)0x01000000u;
+    return (double)x / (double)0x01000000u; //2**24
 }
 
 double estimate_pi_sequential(long long num_samples) {
